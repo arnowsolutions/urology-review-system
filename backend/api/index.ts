@@ -1,4 +1,4 @@
-https://interview-amber-five.vercel.app/import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
