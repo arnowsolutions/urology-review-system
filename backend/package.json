@@ -11,7 +11,7 @@
         "deploy": "vercel --prod",
         "migrate": "echo 'Run src/database/schema.sql in Supabase SQL editor or dashboard'",
         "vercel-build": "echo 'Vercel build step - TypeScript compilation handled by Vercel'",
-        "db:setup": "ts-node src/utils/setupDatabase.ts",
+        "db:setup": "ts-node src/scripts/setup-database.ts",
         "db:seed": "ts-node src/utils/dataSeeder.ts",
         "db:reset": "echo 'WARNING: This will reset all database data. Run the DROP statements from schema.sql in Supabase SQL editor, then run npm run db:setup'",
         "db:migrate": "echo 'Copy and run the CREATE statements from src/database/schema.sql in your Supabase SQL editor'",

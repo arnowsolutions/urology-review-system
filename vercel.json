@@ -1,27 +1,13 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "public/index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "backend/api/**/*.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/backend/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "source": "/api/(.*)",
+      "destination": "/backend/api/index"
     }
   ],
   "functions": {
-    "backend/api/**/*.ts": {
+    "backend/api/index.ts": {
       "maxDuration": 30
     }
   }
