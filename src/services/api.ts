@@ -1,7 +1,7 @@
 import { Applicant, ApiApplicant, Review, Reviewer, ProgressStats, FinalSelection, ApplicantDistribution } from '../types';
 
 // API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api');
 
 // Request headers
 const DEFAULT_HEADERS = {
