@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 
 // Import routes
 import applicantsRouter from '../src/routes/applicants';
+import reviewersRouter from '../src/routes/reviewers';
 import reviewsRouter from '../src/routes/reviews';
 import progressRouter from '../src/routes/progress';
 
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
 
 // Mount API routes
 app.use('/api/applicants', applicantsRouter);
+app.use('/api/reviewers', reviewersRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/progress', progressRouter);
 
@@ -51,6 +53,7 @@ app.get('/api', (req, res) => {
         endpoints: {
             health: '/api/health',
             applicants: '/api/applicants',
+            reviewers: '/api/reviewers',
             reviews: '/api/reviews',
             progress: '/api/progress'
         },
@@ -68,6 +71,8 @@ app.use('/api/*', (req, res) => {
             'GET /api/health',
             'GET /api/applicants',
             'POST /api/applicants',
+            'GET /api/reviewers',
+            'POST /api/reviewers',
             'GET /api/reviews',
             'POST /api/reviews',
             'GET /api/progress'
