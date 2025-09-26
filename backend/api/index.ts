@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+https://interview-amber-five.vercel.app/import type { VercelRequest, VercelResponse } from '@vercel/node';
 import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
@@ -14,6 +14,9 @@ import applicantsRouter from '../src/routes/applicants';
 import reviewersRouter from '../src/routes/reviewers';
 import reviewsRouter from '../src/routes/reviews';
 import progressRouter from '../src/routes/progress';
+
+// Import data seeder
+import { DataSeeder } from '../src/utils/dataSeeder';
 
 // Load environment variables
 dotenv.config();
@@ -67,6 +70,27 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Database seeding endpoint
+app.post('/api/seed', async (req, res) => {
+    try {
+        console.log('🌱 Starting database seeding via API endpoint...');
+        await DataSeeder.seedAll();
+        res.status(200).json({
+            success: true,
+            message: 'Database seeding completed successfully',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Database seeding failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Database seeding failed',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Mount API routes synchronously
 app.use('/api/applicants', applicantsRouter);
 app.use('/api/reviewers', reviewersRouter);
@@ -80,6 +104,7 @@ app.get('/api', (req, res) => {
         version: '1.0.0',
         endpoints: {
             health: '/api/health',
+            seed: 'POST /api/seed',
             applicants: '/api/applicants',
             reviewers: '/api/reviewers',
             reviews: '/api/reviews',
@@ -101,6 +126,7 @@ app.use('/api/*', (req, res) => {
         availableEndpoints: [
             'GET /api',
             'GET /api/health',
+            'POST /api/seed',
             'GET /api/applicants',
             'POST /api/applicants',
             'GET /api/reviewers',
