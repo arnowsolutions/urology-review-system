@@ -11,8 +11,8 @@ const DEFAULT_HEADERS = {
     'Content-Type': 'application/json',
 };
 
-// API Response wrapper
-interface ApiResponse<T> {
+// Success response wrapper
+interface SuccessResponse<T> {
     data: T;
     success: boolean;
     message?: string;
@@ -46,8 +46,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
         throw new ApiError(errorMessage, response.status);
     }
 
-    const data = await response.json();
-    return data;
+    const json = await response.json();
+    if (!json.success) {
+        throw new ApiError(json.message || 'Request failed', response.status);
+    }
+    return json.data;
 }
 
 // Helper function to make API requests with retry logic
@@ -128,7 +131,7 @@ export async function fetchReviewers(): Promise<Reviewer[]> {
  * Fetch reviews with optional reviewer filtering
  */
 export async function fetchReviews(reviewerName?: string): Promise<Review[]> {
-    const url = reviewerName ? `/reviews?reviewer=${encodeURIComponent(reviewerName)}` : '/reviews';
+    const url = reviewerName ? `/reviews?reviewer_name=${encodeURIComponent(reviewerName)}` : '/reviews';
     const response = await makeRequest<Review[]>(url);
     return response;
 }
@@ -140,35 +143,32 @@ export async function saveReview(
     applicantId: string,
     reviewData: Partial<Review>
 ): Promise<Review> {
-    // Check if review already exists by trying to fetch it first
-    try {
-        const reviewerName = reviewData.reviewer_name || reviewData.reviewer;
-        if (reviewerName) {
-            const existingReviews = await fetchReviews(reviewerName);
-            const existingReview = existingReviews.find(r => r.applicant_id === applicantId);
-
-            if (existingReview && existingReview.id) {
-                // Update existing review (PUT)
-                const response = await makeRequest<Review>(`/reviews/${existingReview.id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(reviewData),
-                });
-                return response;
-            }
-        }
-    } catch (error) {
-        // If fetch fails, proceed with POST
+    const reviewerName = reviewData.reviewer_name || reviewData.reviewer;
+    if (!reviewerName) {
+        throw new Error('reviewer_name is required');
     }
 
-    // Create new review (POST)
-    const response = await makeRequest<Review>('/reviews', {
-        method: 'POST',
-        body: JSON.stringify({
-            ...reviewData,
-            applicant_id: applicantId,
-        }),
-    });
-    return response;
+    try {
+        // Try to update existing review
+        const response = await makeRequest<Review>(`/reviews/${applicantId}/${encodeURIComponent(reviewerName)}`, {
+            method: 'PUT',
+            body: JSON.stringify(reviewData),
+        });
+        return response;
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+            // Review doesn't exist, create new
+            const response = await makeRequest<Review>('/reviews', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ...reviewData,
+                    applicant_id: applicantId,
+                }),
+            });
+            return response;
+        }
+        throw error;
+    }
 }
 
 /**

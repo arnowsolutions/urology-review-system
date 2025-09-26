@@ -4,23 +4,25 @@ This guide documents the fixes applied to resolve deployment issues with the Uro
 
 ## Original Issues
 
-The deployment faced several critical problems that prevented successful builds and runtime functionality:
+The deployment faced critical problems that prevented successful API functionality:
 
-1. **Conflicting vercel.json Files**: Multiple `vercel.json` configurations existed across the monorepo (root and backend directories), causing conflicts in build settings, routing, and environment handling.
+1. **Incorrect API File Location**: The root-level `/api/index.ts` file had incorrect relative import paths (`../backend/src/routes/*`) that failed in Vercel's serverless environment, causing the API function to fail loading.
 
-2. **Missing API Routing**: The backend API routes were not properly configured for Vercel's serverless environment, leading to 404 errors when accessing API endpoints from the frontend.
+2. **Missing Backend Source Files**: The `vercel.json` configuration lacked `includeFiles` settings, preventing necessary backend source files from being deployed with the API function.
 
-3. **Complex Build Scripts Failing in Serverless Environment**: The build process included database seeding and setup scripts that attempted to run database operations during the build phase, which is incompatible with Vercel's serverless constraints where builds must be stateless.
+3. **Import Path Resolution Failures**: Due to missing backend files and incorrect paths, API requests returned HTML error pages instead of JSON responses, breaking frontend-backend communication.
 
 ## Solution Overview
 
 The following changes were implemented to resolve the deployment issues:
 
-1. **Consolidated Monorepo Configuration**: Removed conflicting `vercel.json` files and created a single, unified configuration at the root level that properly handles both frontend and backend deployment.
+1. **Fixed Vercel Configuration**: Updated `vercel.json` to point to the correct API file (`backend/api/index.ts`) with proper relative paths and added `includeFiles` to ensure all backend source files are deployed.
 
-2. **Simplified Build Process**: Separated build-time operations from runtime operations. Database setup and seeding are now handled through separate scripts that run post-deployment or via API endpoints, not during the build phase.
+2. **Included Backend Source Files**: Added `includeFiles: ["backend/src/**"]` to the Vercel configuration to include all necessary backend files in the serverless function deployment.
 
-3. **Proper Routing Setup**: Configured Vercel to route API requests to the backend serverless functions and static assets to the frontend build output.
+3. **Cleaned Up Duplicate Files**: Removed the problematic root-level `api/index.ts` file that had incorrect import paths, ensuring only the correct backend API file is used.
+
+4. **Optimized Deployment Files**: Updated `.vercelignore` to exclude unnecessary files while ensuring backend source files are included.
 
 ## Step-by-Step Deployment Instructions
 
@@ -58,8 +60,18 @@ In the Vercel dashboard:
 - **Issue**: API endpoints return 404
   - **Solution**: Verify the `vercel.json` routing configuration. API routes should be prefixed with `/api/`. Test with `scripts/testApiConnectivity.cjs` to check endpoint availability.
 
+- **Issue**: API returns HTML error page instead of JSON
+  - **Solution**: This indicates the serverless function failed to load due to import path issues. Check that `vercel.json` points to `backend/api/index.ts` and includes `includeFiles: ["backend/src/**"]`. Ensure the backend API file uses correct relative paths (`./src/routes/*`).
+
 - **Issue**: CORS errors
   - **Solution**: Ensure CORS is properly configured in the backend. Check `backend/src/utils/corsConfig.ts` for CORS settings. The frontend should make requests to the correct Vercel deployment URL.
+
+### Monorepo Deployment Issues
+- **Issue**: Backend source files not found during function execution
+  - **Solution**: Ensure `includeFiles` in `vercel.json` includes `"backend/src/**"`. Update `.vercelignore` to not exclude backend source files.
+
+- **Issue**: Import errors in serverless function
+  - **Solution**: Verify that the API file uses correct relative import paths. The backend API should import from `./src/routes/*`, not `../backend/src/routes/*`.
 
 ### Other Common Issues
 - **Issue**: Environment variables not loading
@@ -77,23 +89,25 @@ After deployment, perform these checks to confirm everything is working:
 - Verify the React application loads without errors
 - Check browser console for any JavaScript errors
 
-### 2. API Endpoints Response
+### 2. API Health Check (Critical)
+- Access `/api/health` endpoint directly in your browser or using curl
+- **Important**: Verify it returns JSON response (not HTML error page)
+- Should return status information about the backend and database connection
+- If you see HTML instead of JSON, the API function failed to load due to import path issues
+
+### 3. API Endpoints Response
 - Use the test script: `node scripts/testApiConnectivity.cjs`
 - This script tests key endpoints:
-  - Health check: `GET /api/health`
+  - Health check: `GET /api/health` (must return JSON, not HTML)
   - Applicants: `GET /api/applicants`
   - Reviews: `GET /api/reviews`
   - Progress: `GET /api/progress`
 - All endpoints should return HTTP 200 with valid JSON responses
 
-### 3. Database Connectivity
+### 4. Database Connectivity
 - Run the backend connection test: `node backend/test-connection.ts`
 - This verifies Supabase connection and basic database operations
 - Check that data seeding works via API endpoints if needed
-
-### 4. Health Check Endpoints
-- Access `/api/health` endpoint directly
-- Should return status information about the backend and database connection
 
 ### 5. End-to-End Testing
 - Perform user workflows in the application
@@ -101,3 +115,9 @@ After deployment, perform these checks to confirm everything is working:
 - Verify data persists and retrieves correctly from Supabase
 
 If any verification step fails, refer to the troubleshooting section and check Vercel deployment logs for detailed error information.
+
+## Additional Resources
+
+- [Vercel Monorepo Documentation](https://vercel.com/docs/concepts/projects/monorepos)
+- [Vercel Serverless Functions Best Practices](https://vercel.com/docs/concepts/functions/serverless-functions)
+- [Vercel includeFiles Configuration](https://vercel.com/docs/concepts/projects/project-configuration#include-files)

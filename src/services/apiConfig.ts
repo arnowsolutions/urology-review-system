@@ -88,14 +88,12 @@ export function getEnvironmentInfo(): EnvironmentInfo {
     const env = detectEnvironment();
     let hostname = 'unknown';
     let protocol = 'http';
-    let port: string | undefined;
     let isVercel = false;
 
     if (typeof window !== 'undefined') {
         const location = window.location;
         hostname = location.hostname;
         protocol = location.protocol.replace(':', '');
-        port = location.port || undefined;
         isVercel = hostname.includes('vercel.app') || !!process.env.VERCEL;
     }
 
@@ -105,7 +103,7 @@ export function getEnvironmentInfo(): EnvironmentInfo {
         type: env,
         hostname,
         protocol,
-        port,
+        ...(typeof window !== 'undefined' && window.location.port && { port: window.location.port }),
         isLocalhost,
         isVercel,
     };

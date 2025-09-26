@@ -3,17 +3,17 @@ import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 
-// Import routes
-import applicantsRouter from '../src/routes/applicants';
-import reviewersRouter from '../src/routes/reviewers';
-import reviewsRouter from '../src/routes/reviews';
-import progressRouter from '../src/routes/progress';
-
 // Import CORS utilities
 import { createCorsOptions, logCorsConfiguration } from '../src/utils/corsConfig';
 
 // Import environment utilities
 import { getCurrentEnvironment, logEnvironmentInfo, getEnvironmentInfo } from '../src/utils/environmentDetector';
+
+// Import API route handlers
+import applicantsRouter from '../src/routes/applicants';
+import reviewersRouter from '../src/routes/reviewers';
+import reviewsRouter from '../src/routes/reviews';
+import progressRouter from '../src/routes/progress';
 
 // Load environment variables
 dotenv.config();
@@ -67,7 +67,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Mount API routes
+// Mount API routes synchronously
 app.use('/api/applicants', applicantsRouter);
 app.use('/api/reviewers', reviewersRouter);
 app.use('/api/reviews', reviewsRouter);

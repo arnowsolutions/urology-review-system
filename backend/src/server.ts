@@ -37,7 +37,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
+app.get('/api/health', (req: Request, res: Response) => {
     res.status(200).json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -57,7 +57,7 @@ app.get('/', (req: Request, res: Response) => {
         message: 'Urological Review System Backend API',
         version: '1.0.0',
         endpoints: {
-            health: '/health',
+            health: '/api/health',
             applicants: '/api/applicants',
             reviewers: '/api/reviewers',
             reviews: '/api/reviews',
@@ -74,7 +74,7 @@ app.use((req: Request, res: Response) => {
         message: `Route ${req.method} ${req.path} not found`,
         availableEndpoints: [
             'GET /',
-            'GET /health',
+            'GET /api/health',
             'GET /api/applicants',
             'POST /api/applicants',
             'GET /api/reviewers',
@@ -143,7 +143,7 @@ async function initializeServer(): Promise<void> {
         // Start server
         app.listen(PORT, () => {
             console.log(`✅ Server running on port ${PORT}`);
-            console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+            console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
             console.log(`📚 API docs: http://localhost:${PORT}/`);
             console.log(`🏥 Urological Review System API ready!`);
         });

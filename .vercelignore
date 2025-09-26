@@ -4,8 +4,7 @@ node_modules/
 *.log
 .DS_Store
 
-# Frontend development files (exclude src/ after build)
-src/
+# Frontend development files
 
 # Include built frontend (dist/ if present)
 !dist/
@@ -18,7 +17,6 @@ backend/test-connection.ts
 
 # Include backend source code and API functions
 !backend/src/
-!api/
 
 # Documentation files
 *.md
