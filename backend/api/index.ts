@@ -19,7 +19,7 @@ app.use(cors({
     origin: [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-        'https://your-frontend-domain.vercel.app', // Update this with your actual frontend URL
+        'https://interview-amber-five.vercel.app', // Frontend URL
         /^https:\/\/.*\.vercel\.app$/ // Allow all Vercel preview deployments
     ],
     credentials: true
