@@ -18,7 +18,7 @@ backend/test-connection.ts
 
 # Include backend source code and API functions
 !backend/src/
-!backend/api/
+!api/
 
 # Documentation files
 *.md
