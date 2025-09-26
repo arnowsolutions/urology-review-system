@@ -3,14 +3,13 @@
     "version": "1.0.0",
     "description": "Urology Residency Review System",
     "scripts": {
-        "start": "npm run dev:check-api && parcel public/index.html --open",
-        "build": "npm run build:check-env && parcel build public/index.html",
+        "start": "parcel public/index.html --open",
+        "build": "parcel build public/index.html --dist-dir dist",
+        "build:frontend": "parcel build public/index.html --dist-dir dist",
         "type-check": "tsc --noEmit",
         "lint": "eslint src --ext .ts,.tsx",
         "test:api:local": "API_BASE_URL=http://localhost:3001/api node scripts/testApiConnectivity.cjs",
-        "test:api:production": "API_BASE_URL=/api node scripts/testApiConnectivity.cjs",
-        "dev:check-api": "node -e \"console.log('Detecting environment and testing API connectivity...'); const { getEnvironmentInfo } = require('./src/utils/environmentDetector'); console.log(getEnvironmentInfo()); process.env.API_BASE_URL = getEnvironmentInfo().type === 'development' ? 'http://localhost:3001/api' : '/api'; require('./scripts/testApiConnectivity.cjs');\" || echo 'Warning: API may not be accessible. Check backend server.'",
-        "build:check-env": "node -e \"console.log('Validating environment configuration...'); const { getEnvironmentInfo } = require('./src/utils/environmentDetector'); const info = getEnvironmentInfo(); console.log('Build environment:', info); if (info.type === 'production' && !info.isVercel && info.isLocalhost) { console.warn('Warning: Building for production but detected localhost environment.'); } console.log('Environment validation complete.');\""
+        "test:api:production": "API_BASE_URL=/api node scripts/testApiConnectivity.cjs"
     },
     "dependencies": {
         "lucide-react": "^0.294.0",

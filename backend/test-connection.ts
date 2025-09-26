@@ -9,6 +9,7 @@
  * - Direct execution: npx ts-node test-connection.ts
  */
 
+import 'dotenv/config';
 
 function detectEnvironment(): string {
     if (process.env.VERCEL) {
