@@ -1,7 +1,10 @@
 import { Applicant, ApiApplicant, Review, Reviewer, ProgressStats, FinalSelection, ApplicantDistribution } from '../types';
+import { detectEnvironment, getApiBaseUrl } from './apiConfig';
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:3001/api';
+// Initialize current base URL, with fallback to sessionStorage
+let currentBaseUrl = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('apiBaseUrl')
+    ? sessionStorage.getItem('apiBaseUrl')!
+    : getApiBaseUrl();
 
 // Request headers
 const DEFAULT_HEADERS = {
@@ -53,7 +56,7 @@ async function makeRequest<T>(
     options: RequestInit = {},
     retries = 2
 ): Promise<T> {
-    const fullUrl = `${API_BASE_URL}${url}`;
+    const fullUrl = `${currentBaseUrl}${url}`;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
@@ -225,14 +228,37 @@ export async function exportReviewData(): Promise<{
 }
 
 /**
- * Check API health and connectivity
+ * Check API health and connectivity with fallback attempts
  */
 export async function checkApiHealth(): Promise<boolean> {
+    const primaryUrl = getApiBaseUrl();
+    const env = detectEnvironment();
+    const fallbackUrl = env === 'development' ? '/api' : 'http://localhost:3001/api';
+
     try {
         await makeRequest('/health');
         return true;
     } catch (error) {
-        console.error('API health check failed:', error);
+        console.error('API health check failed with primary URL:', error);
+
+        // Try fallback URL
+        try {
+            const fallbackFullUrl = `${fallbackUrl}/health`;
+            const response = await fetch(fallbackFullUrl, {
+                headers: DEFAULT_HEADERS,
+            });
+            if (response.ok) {
+                console.log('API health check succeeded with fallback URL');
+                currentBaseUrl = fallbackUrl;
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.setItem('apiBaseUrl', fallbackUrl);
+                }
+                return true;
+            }
+        } catch (fallbackError) {
+            console.error('API health check failed with fallback URL:', fallbackError);
+        }
+
         return false;
     }
 }

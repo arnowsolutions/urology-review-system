@@ -9,21 +9,20 @@ import reviewersRouter from '../src/routes/reviewers';
 import reviewsRouter from '../src/routes/reviews';
 import progressRouter from '../src/routes/progress';
 
+// Import CORS utilities
+import { createCorsOptions, logCorsConfiguration } from '../src/utils/corsConfig';
+
 // Load environment variables
 dotenv.config();
 
 const app = express();
 
-// CORS configuration for Vercel
-app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'https://your-frontend-domain.vercel.app', // Update this with your actual frontend URL
-        /^https:\/\/.*\.vercel\.app$/ // Allow all Vercel preview deployments
-    ],
-    credentials: true
-}));
+// Dynamic CORS configuration for Vercel
+const corsOptions = createCorsOptions();
+app.use(cors(corsOptions));
+
+// Log CORS configuration for debugging
+logCorsConfiguration();
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));

@@ -6,8 +6,12 @@ import { DataSeeder } from './utils/dataSeeder';
 
 // Import routes
 import applicantsRouter from './routes/applicants';
+import reviewersRouter from './routes/reviewers';
 import reviewsRouter from './routes/reviews';
 import progressRouter from './routes/progress';
+
+// Import CORS utilities
+import { createCorsOptions, logCorsConfiguration, validateCorsOrigins, getDynamicCorsOrigins } from './utils/corsConfig';
 
 // Load environment variables
 dotenv.config();
@@ -15,18 +19,12 @@ dotenv.config();
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS configuration
-const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? [
-        'https://your-frontend-domain.vercel.app', // Update with your actual frontend URL
-        /^https:\/\/.*\.vercel\.app$/ // Allow all Vercel preview deployments
-    ]
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+// Dynamic CORS configuration
+const corsOptions = createCorsOptions();
+app.use(cors(corsOptions));
 
-app.use(cors({
-    origin: allowedOrigins,
-    credentials: true
-}));
+// Log CORS configuration for debugging
+logCorsConfiguration();
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -49,6 +47,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 // Mount API routes
 app.use('/api/applicants', applicantsRouter);
+app.use('/api/reviewers', reviewersRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/progress', progressRouter);
 
@@ -60,6 +59,7 @@ app.get('/', (req: Request, res: Response) => {
         endpoints: {
             health: '/health',
             applicants: '/api/applicants',
+            reviewers: '/api/reviewers',
             reviews: '/api/reviews',
             progress: '/api/progress'
         },
@@ -77,6 +77,8 @@ app.use((req: Request, res: Response) => {
             'GET /health',
             'GET /api/applicants',
             'POST /api/applicants',
+            'GET /api/reviewers',
+            'POST /api/reviewers',
             'GET /api/reviews',
             'POST /api/reviews',
             'GET /api/progress'
@@ -99,6 +101,20 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 async function initializeServer(): Promise<void> {
     try {
         console.log('🚀 Starting Urological Review System Backend...');
+
+        // Validate CORS configuration
+        console.log('🔒 Validating CORS configuration...');
+        const corsOrigins = getDynamicCorsOrigins();
+        const corsValidation = validateCorsOrigins(corsOrigins);
+        if (!corsValidation.isValid) {
+            console.error('❌ CORS validation failed:', corsValidation.errors);
+            console.log('Allowed origins:', corsOrigins);
+            process.exit(1);
+        }
+        if (corsValidation.warnings.length > 0) {
+            console.warn('⚠️ CORS warnings:', corsValidation.warnings);
+        }
+        console.log('✅ CORS configuration validated. Allowed origins:', corsOrigins);
 
         // Test database connection
         console.log('🔍 Testing database connection...');

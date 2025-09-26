@@ -8,6 +8,7 @@ import {
     ApplicantDistribution,
 } from '../types';
 import * as api from '../services/api';
+import { detectEnvironment, getApiBaseUrl, testApiConnectivity } from '../services/apiConfig';
 
 // Hook return type
 export interface UseApiDataReturn {
@@ -56,7 +57,14 @@ export interface UseApiDataReturn {
 
     // Health check
     isApiHealthy: boolean;
-    checkApiHealth: () => Promise<void>;
+    checkApiHealth: () => Promise<boolean>;
+
+    // Environment and connection
+    currentEnvironment: 'development' | 'production';
+    apiBaseUrl: string;
+    connectionStatus: 'checking' | 'connected' | 'disconnected';
+    detectApiEnvironment: () => Promise<{ env: 'development' | 'production'; baseUrl: string; }>;
+    refreshApiConfig: () => Promise<void>;
 }
 
 /**
@@ -91,6 +99,11 @@ export function useApiData(): UseApiDataReturn {
 
     // API health state
     const [isApiHealthy, setIsApiHealthy] = useState(true);
+
+    // Environment and connection state
+    const [currentEnvironment, setCurrentEnvironment] = useState<'development' | 'production'>('development');
+    const [apiBaseUrl, setApiBaseUrl] = useState<string>('');
+    const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
 
     // Cache timestamps to avoid unnecessary API calls
     const [lastFetch, setLastFetch] = useState({
@@ -322,22 +335,60 @@ export function useApiData(): UseApiDataReturn {
         }
     }, []);
 
-    // Check API health
-    const checkApiHealth = useCallback(async () => {
+    // Detect API environment
+    const detectApiEnvironment = useCallback(async () => {
         try {
-            const healthy = await api.checkApiHealth();
+            const env = detectEnvironment();
+            const baseUrl = getApiBaseUrl();
+            setCurrentEnvironment(env);
+            setApiBaseUrl(baseUrl);
+            return { env, baseUrl };
+        } catch (error) {
+            console.error('Error detecting API environment:', error);
+            setConnectionStatus('disconnected');
+            throw error;
+        }
+    }, []);
+
+    // Refresh API configuration
+    const refreshApiConfig = useCallback(async () => {
+        setConnectionStatus('checking');
+        try {
+            await detectApiEnvironment();
+            const connected = await testApiConnectivity();
+            setConnectionStatus(connected ? 'connected' : 'disconnected');
+        } catch (error) {
+            setConnectionStatus('disconnected');
+        }
+    }, [detectApiEnvironment]);
+
+    // Check API health
+    const checkApiHealth = useCallback(async (): Promise<boolean> => {
+        setConnectionStatus('checking');
+        try {
+            const healthy = await testApiConnectivity();
             setIsApiHealthy(healthy);
+            setConnectionStatus(healthy ? 'connected' : 'disconnected');
+            return healthy;
         } catch (error) {
             setIsApiHealthy(false);
+            setConnectionStatus('disconnected');
+            return false;
         }
     }, []);
 
     // Initial data loading on mount
     useEffect(() => {
         const initializeData = async () => {
-            await checkApiHealth();
-            if (isApiHealthy) {
-                await refreshAll();
+            try {
+                await refreshApiConfig();
+                const healthy = await checkApiHealth();
+                if (healthy) {
+                    await refreshAll();
+                }
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                setConnectionStatus('disconnected');
             }
         };
 
@@ -388,6 +439,13 @@ export function useApiData(): UseApiDataReturn {
         // Health check
         isApiHealthy,
         checkApiHealth,
+
+        // Environment and connection
+        currentEnvironment,
+        apiBaseUrl,
+        connectionStatus,
+        detectApiEnvironment,
+        refreshApiConfig,
 
         // Export function
         exportReviewData: api.exportReviewData,
