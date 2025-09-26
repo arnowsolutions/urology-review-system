@@ -1,0 +1,580 @@
+openapi: 3.0.3
+info:
+  title: Urological Review System API
+  description: Backend API for managing urological residency application reviews
+  version: 1.0.0
+  contact:
+    name: Urological Review System
+    email: support@example.com
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: https://api.yourproductiondomain.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the API
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  service:
+                    type: string
+                    example: "urological-review-backend"
+
+  /api/applicants:
+    get:
+      summary: Get all applicants
+      description: Retrieve all applicants in the system
+      responses:
+        '200':
+          description: Successfully retrieved applicants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DatabaseApplicant'
+    post:
+      summary: Create a new applicant
+      description: Add a new applicant to the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicantRequest'
+      responses:
+        '201':
+          description: Applicant created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/DatabaseApplicant'
+        '400':
+          description: Validation error
+        '409':
+          description: Applicant already exists
+
+  /api/applicants/distribution:
+    get:
+      summary: Get applicant distribution
+      description: Get how applicants are distributed among reviewers
+      responses:
+        '200':
+          description: Successfully retrieved distribution
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ApplicantDistribution'
+
+  /api/applicants/{id}:
+    get:
+      summary: Get applicant by ID
+      description: Retrieve a specific applicant by their UUID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully retrieved applicant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/DatabaseApplicant'
+        '404':
+          description: Applicant not found
+    put:
+      summary: Update applicant
+      description: Update an existing applicant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicantRequest'
+      responses:
+        '200':
+          description: Applicant updated successfully
+        '404':
+          description: Applicant not found
+    delete:
+      summary: Delete applicant
+      description: Remove an applicant from the system
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Applicant deleted successfully
+        '404':
+          description: Applicant not found
+
+  /api/reviews:
+    get:
+      summary: Get reviews
+      description: Retrieve reviews with optional filtering
+      parameters:
+        - name: applicant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: reviewer_name
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DatabaseReview'
+    post:
+      summary: Create a review
+      description: Submit a new review for an applicant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review created successfully
+        '400':
+          description: Validation error
+        '409':
+          description: Review already exists
+
+  /api/reviews/applicant/{applicantId}:
+    get:
+      summary: Get reviews for applicant
+      description: Retrieve all reviews for a specific applicant
+      parameters:
+        - name: applicantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully retrieved reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DatabaseReview'
+
+  /api/reviews/final-selections:
+    get:
+      summary: Get all final selections
+      description: Retrieve all final administrative decisions
+      responses:
+        '200':
+          description: Successfully retrieved final selections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DatabaseFinalSelection'
+    post:
+      summary: Create/update final selection
+      description: Make or update a final administrative decision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFinalSelectionRequest'
+      responses:
+        '201':
+          description: Final selection created/updated successfully
+
+  /api/progress:
+    get:
+      summary: Get complete progress
+      description: Retrieve overall progress and reviewer-specific progress
+      responses:
+        '200':
+          description: Successfully retrieved progress information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProgressResponse'
+
+  /api/progress/overall:
+    get:
+      summary: Get overall progress
+      description: Retrieve system-wide progress statistics
+      responses:
+        '200':
+          description: Successfully retrieved overall progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProgressInfo'
+
+  /api/progress/dashboard:
+    get:
+      summary: Get dashboard summary
+      description: Retrieve comprehensive dashboard statistics
+      responses:
+        '200':
+          description: Successfully retrieved dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      totalApplicants:
+                        type: integer
+                      totalReviewers:
+                        type: integer
+                      completedReviews:
+                        type: integer
+                      pendingReviews:
+                        type: integer
+                      finalizedDecisions:
+                        type: integer
+                      averageScore:
+                        type: number
+
+components:
+  schemas:
+    ApplicantCategory:
+      type: string
+      enum: [regular, i-sub]
+    
+    AdminDecision:
+      type: string
+      enum: [Selected, "Not Selected", Pending]
+    
+    DecisionType:
+      type: string
+      enum: ["Definitely Interview", Maybe, "Do Not Interview"]
+
+    DatabaseApplicant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        name:
+          type: string
+        category:
+          $ref: '#/components/schemas/ApplicantCategory'
+        details:
+          type: string
+        site_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DatabaseReview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicant_id:
+          type: string
+          format: uuid
+        reviewer_name:
+          type: string
+        preference:
+          type: integer
+          minimum: 1
+          maximum: 5
+        pressure:
+          type: integer
+          minimum: 1
+          maximum: 5
+        underserved:
+          type: integer
+          minimum: 1
+          maximum: 5
+        leadership:
+          type: integer
+          minimum: 1
+          maximum: 5
+        academic:
+          type: integer
+          minimum: 1
+          maximum: 5
+        research:
+          type: integer
+          minimum: 1
+          maximum: 5
+        personal:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+        decision:
+          $ref: '#/components/schemas/DecisionType'
+        total_score:
+          type: integer
+        site_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DatabaseFinalSelection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicant_id:
+          type: string
+          format: uuid
+        admin_decision:
+          $ref: '#/components/schemas/AdminDecision'
+        selection_reason:
+          type: string
+        average_score:
+          type: number
+        reviewer_count:
+          type: integer
+        site_name:
+          type: string
+        decided_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateApplicantRequest:
+      type: object
+      required:
+        - external_id
+        - name
+      properties:
+        external_id:
+          type: string
+        name:
+          type: string
+        category:
+          $ref: '#/components/schemas/ApplicantCategory'
+        details:
+          type: string
+
+    UpdateApplicantRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          $ref: '#/components/schemas/ApplicantCategory'
+        details:
+          type: string
+
+    CreateReviewRequest:
+      type: object
+      required:
+        - applicant_id
+        - reviewer_name
+      properties:
+        applicant_id:
+          type: string
+          format: uuid
+        reviewer_name:
+          type: string
+        preference:
+          type: integer
+          minimum: 1
+          maximum: 5
+        pressure:
+          type: integer
+          minimum: 1
+          maximum: 5
+        underserved:
+          type: integer
+          minimum: 1
+          maximum: 5
+        leadership:
+          type: integer
+          minimum: 1
+          maximum: 5
+        academic:
+          type: integer
+          minimum: 1
+          maximum: 5
+        research:
+          type: integer
+          minimum: 1
+          maximum: 5
+        personal:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+        decision:
+          $ref: '#/components/schemas/DecisionType'
+
+    CreateFinalSelectionRequest:
+      type: object
+      required:
+        - applicant_id
+        - admin_decision
+      properties:
+        applicant_id:
+          type: string
+          format: uuid
+        admin_decision:
+          $ref: '#/components/schemas/AdminDecision'
+        selection_reason:
+          type: string
+
+    ApplicantDistribution:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: array
+          items:
+            type: string
+          minItems: 4
+          maxItems: 4
+
+    ProgressInfo:
+      type: object
+      properties:
+        completed:
+          type: integer
+        total:
+          type: integer
+
+    ReviewerStats:
+      type: object
+      properties:
+        name:
+          type: string
+        assigned:
+          type: integer
+        completed:
+          type: integer
+        percentage:
+          type: integer
+
+    ProgressResponse:
+      type: object
+      properties:
+        overall:
+          $ref: '#/components/schemas/ProgressInfo'
+        byReviewer:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewerStats'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
