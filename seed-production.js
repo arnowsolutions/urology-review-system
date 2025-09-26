@@ -38,7 +38,7 @@ const regularApplicants = [
 
 async function seedData() {
     console.log('🚀 Seeding production database...');
-    
+
     try {
         // Test API health first
         console.log('🔍 Testing API health...');
@@ -59,7 +59,7 @@ async function seedData() {
                     },
                     body: JSON.stringify(reviewer)
                 });
-                
+
                 if (response.ok) {
                     console.log(`✅ Added reviewer: ${reviewer.name}`);
                 } else {
@@ -82,7 +82,7 @@ async function seedData() {
                     },
                     body: JSON.stringify(applicant)
                 });
-                
+
                 if (response.ok) {
                     console.log(`✅ Added I-Sub applicant: ${applicant.name}`);
                 } else {
@@ -105,7 +105,7 @@ async function seedData() {
                     },
                     body: JSON.stringify(applicant)
                 });
-                
+
                 if (response.ok) {
                     console.log(`✅ Added regular applicant: ${applicant.name}`);
                 } else {

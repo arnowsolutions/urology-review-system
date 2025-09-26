@@ -3,7 +3,7 @@ import { supabaseAdmin } from './src/config/supabase';
 async function testConnection() {
     try {
         console.log('Testing basic Supabase connection...');
-        
+
         // Try a simple health check
         const { data, error } = await supabaseAdmin
             .from('non_existent_table')
